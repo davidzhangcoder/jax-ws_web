@@ -26,6 +26,7 @@ public class TestWebServiceClient
 	public static void main(String[] args)
 	{
 		//在同一个Service的不同调用之间保持会话
+		//test-commit-1
 		TestWebServiceImpl service = new TestWebServiceImplService().getTestWebServiceImplPort();
 		
 		((BindingProvider)service).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
