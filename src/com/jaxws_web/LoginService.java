@@ -3,7 +3,7 @@ package com.jaxws_web;
 import javax.jws.WebService;
 
 /**  
- * ProjectName:	jax-ws_web 
+ * ProjectName:	jax-ws_web 1
  * Filename:	LoginService.java  
  * Description:   
  * Copyright:   	Copyright (c)2010 
