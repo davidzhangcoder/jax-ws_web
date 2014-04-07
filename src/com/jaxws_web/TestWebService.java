@@ -22,4 +22,6 @@ import javax.jws.WebService;
 public interface TestWebService
 {
 	public String webServiceMethod1();
+	
+	public User updateUser(User user);
 }

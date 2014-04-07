@@ -57,4 +57,13 @@ public class TestWebServiceImpl implements TestWebService
 //		return "1";
 	}
 
+
+	@Override
+	public User updateUser(User user)
+	{
+		user.setName("Updated : " + user.getName() );
+		
+		return user;
+	}
+
 }
