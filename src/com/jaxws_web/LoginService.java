@@ -21,6 +21,7 @@ import javax.jws.WebService;
 @WebService(name = "LoginService", targetNamespace = "http://jaxws_web1.com/")
 public interface LoginService
 {
+	//1
 	public String testlogin();
 
 }
