@@ -24,6 +24,8 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
+    private final static QName _UpdateUserResponse_QNAME = new QName("http://jaxws_web.com/", "updateUserResponse");
+    private final static QName _UpdateUser_QNAME = new QName("http://jaxws_web.com/", "updateUser");
     private final static QName _WebServiceMethod1_QNAME = new QName("http://jaxws_web.com/", "webServiceMethod1");
     private final static QName _WebServiceMethod1Response_QNAME = new QName("http://jaxws_web.com/", "webServiceMethod1Response");
 
@@ -32,6 +34,30 @@ public class ObjectFactory {
      * 
      */
     public ObjectFactory() {
+    }
+
+    /**
+     * Create an instance of {@link UpdateUserResponse }
+     * 
+     */
+    public UpdateUserResponse createUpdateUserResponse() {
+        return new UpdateUserResponse();
+    }
+
+    /**
+     * Create an instance of {@link UpdateUser }
+     * 
+     */
+    public UpdateUser createUpdateUser() {
+        return new UpdateUser();
+    }
+
+    /**
+     * Create an instance of {@link User }
+     * 
+     */
+    public User createUser() {
+        return new User();
     }
 
     /**
@@ -48,6 +74,24 @@ public class ObjectFactory {
      */
     public WebServiceMethod1Response createWebServiceMethod1Response() {
         return new WebServiceMethod1Response();
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link UpdateUserResponse }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://jaxws_web.com/", name = "updateUserResponse")
+    public JAXBElement<UpdateUserResponse> createUpdateUserResponse(UpdateUserResponse value) {
+        return new JAXBElement<UpdateUserResponse>(_UpdateUserResponse_QNAME, UpdateUserResponse.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link UpdateUser }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://jaxws_web.com/", name = "updateUser")
+    public JAXBElement<UpdateUser> createUpdateUser(UpdateUser value) {
+        return new JAXBElement<UpdateUser>(_UpdateUser_QNAME, UpdateUser.class, null, value);
     }
 
     /**
