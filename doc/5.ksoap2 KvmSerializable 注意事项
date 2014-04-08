@@ -1,0 +1,15 @@
+ksoap2 - http://ksoap2.svn.sourceforge.net
+今天帮人调试了下ksoap2 KvmSerializable 的问题，大概总结一点：
+实现了KvmSerializable 接口的要特别注意其对应的getPropertyInfo方法，默认这里支持的是
+    public static final Class OBJECT_CLASS = new Object().getClass();
+    public static final Class STRING_CLASS = "".getClass();
+    public static final Class INTEGER_CLASS = new Integer(0).getClass();
+    public static final Class LONG_CLASS = new Long(0).getClass();
+    public static final Class BOOLEAN_CLASS = new Boolean(true).getClass();
+    public static final Class VECTOR_CLASS = new java.util.Vector().getClass();
+如果想使用float，date，需要在添加mapping的地方注册marshal，例如：
+envelope.addMapping(NAMESPACE,"xxx", xxx.getClass());
+Marshal floatMarshal = new MarshalFloat();
+floatMarshal.register(envelope);
+
+上面处理不好，就会抛Cannot serialize:错误了。

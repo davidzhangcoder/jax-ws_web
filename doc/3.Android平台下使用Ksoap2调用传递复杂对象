@@ -1,0 +1,39 @@
+当你想使用ksoap2从服务端递复杂对象给android 客户端时，下面的代码可以帮助你。这是我寻找了两天，终于找到的解决方案，期间的辛苦与烦恼就不提了。遗憾网上竟没有一个完整的博客说明这点，有点是提供大致的方案，然而一些没有提到的小细节往往绊住了你前进的脚步，屡次失败的尝试不断的打击着你的信心，令你灰心丧气，功亏一篑。
+
+        下面贴出代码，大家可以参考下，这些代码是我编译通过并可以成功运行的。
+
+         众所周知，ksoap2 已经默认实现了基本类型（string, int , float,double)数据的类型的序列化传输，就是你不需要手动序列化这些基本类型数据，ksoap已经帮你实现了。然而对于复杂类型对象的传输，我们必须了解下它的传输原理：
+
+        1.  当传输的是arraylist<基本类型> 对象时，你只要把它当做基本类型数据来传就是了，我们可以在浏览器中查看服务端函数的返回形式，可以看到次种传输的返回结果是<return>值1</return>  <return>值2</return>  <return>值3</return>。由此可以看到返回数组的结果形式是由多个相同节点名组成的xml，因此我们只需要在客户端用
+
+    if (envelope.getResponse() != null) {
+          SoapObject result = (SoapObject) envelope.bodyIn;         这句和下面一句，这两句代码就能帮你获取list的元素值了。
+          textView_result.setText(result.getProperty(0).toString());    0 表示数组的第1个元素值
+          textView_result.setText(result.toString());
+   } else { }
+
+       2. 当传输的是类对象时，且类对象的属性值都是是基本数据类型，这与上面的原理基本相似，其代码如下：
+
+if (envelope.getResponse() != null) {
+     SoapObject result = new SoapObject(serviceUrl,"NetData");
+     result = (SoapObject) envelope.getResult();             //这里如果用bodyin是不行的，抛出异常。
+       String nd = result.getProperty("name").toString();     //执行服务端的类属性值的名称
+     textView_result.setText(nd.toString());
+   } else {   }
+
+   3. 当传输任意数据类型时，可以将其封装为类，再把它序列化为byte数组进行传输，在另一端进行反序列化为类对象，这样就可以用该对象访问类里所有成员变量了。其参考代码连接：http://www.cublog.cn/u1/47207/showart_1864609.html。该文章讲得很详细，可以按照它来编写，但有一点需要注意，
+
+byte[] by = (byte[])Response;   这行代码，在我运行时抛出异常，我不明白作者是怎么能成功运行的。经过辛苦找寻，终于找到了解决的办法，其可行代码是：
+
+Object result =(Object)envelope.getResult();
+       String retString = String.valueOf(result);
+       byte[] retByte = org.kobjects.base64.Base64.decode(retString);
+       DataPacket Dp = DataPacket.deserialize(retByte);
+
+       获取的object转换为字节数组时，需要通过解码，再反序列化。真不明白参考代码连接那篇文章的作者怎么没有说明这点，难道他不用解码也可以运行成功，还是忽略写了这点的重要性。
+
+ 总结：
+
+       花了两天的时间，就为了这个问题，想想有点不值，人生能有多少个两天呢？假如有网友认真的整理出解决方案，那些初学者就不用花费人生的宝贵时间去苦苦寻找了，那该多好啊！
+
+       让我们一起分享与交流，一起进步吧！

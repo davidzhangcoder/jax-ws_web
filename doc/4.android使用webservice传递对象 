@@ -1,0 +1,148 @@
+工作中遇到这么一个问题，郁闷了好久终于解决，记录一下
+
+平时网上有调用webservice天气预报的demo，讲的很详细，但是天气预报的webservice传递的是简单数据类型，需要传递对象的时候就比较郁闷了。先讲一下如何传递对象吧。
+
+我用到的方法是直接把对象序列化，因为服务器端接受的不只有我的请求，所以不能用网上说的将对象装变为字符串的方法。
+
+序列化对象的时候，要把对象实现KvmSerializable接口，直接实现Serializable接口是不行的。接口提供的几个方法都需要重写，下面给个我的例子，接口重写的话，可以按照例子中的意思写，很简单。
+
+[java] view plaincopy
+
+    import java.util.Hashtable;  
+      
+    import org.ksoap2.serialization.KvmSerializable;  
+    import org.ksoap2.serialization.PropertyInfo;  
+      
+    public class ReqQueryPayOrder implements KvmSerializable {  
+      
+        private String appSerialNo;  
+      
+        private String appPayKey;  
+      
+        public String getAppSerialNo() {  
+            return appSerialNo;  
+        }  
+      
+        public void setAppSerialNo(String appSerialNo) {  
+            this.appSerialNo = appSerialNo;  
+        }  
+      
+        public String getAppPayKey() {  
+            return appPayKey;  
+        }  
+      
+        public void setAppPayKey(String appPayKey) {  
+            this.appPayKey = appPayKey;  
+        }  
+      
+        @Override  
+        public Object getProperty(int arg0) {  
+            // TODO Auto-generated method stub  
+            switch (arg0) {  
+            case 0:  
+                return appSerialNo;  
+            case 1:  
+                return appPayKey;  
+            }  
+            return null;  
+        }  
+      
+        @Override  
+        public int getPropertyCount() {  
+            // TODO Auto-generated method stub  
+            return 2;  
+        }  
+      
+      
+        public void getPropertyInfo(int arg0, @SuppressWarnings("rawtypes") Hashtable arg1, PropertyInfo arg2) {  
+            // TODO Auto-generated method stub  
+            switch (arg0) {  
+            case 0:  
+                arg2.type = PropertyInfo.STRING_CLASS;  
+                arg2.name = "appSerialNo";  
+                break;  
+            case 1:  
+                arg2.type = PropertyInfo.STRING_CLASS;  
+                arg2.name = "appPayKey";  
+                break;  
+            default:  
+                break;  
+            }  
+        }  
+      
+        @Override  
+        public void setProperty(int arg0, Object arg1) {  
+            switch (arg0) {  
+            case 0:  
+                appSerialNo = arg1.toString();  
+                break;  
+            case 1:  
+                appPayKey = arg1.toString();  
+                break;  
+            default:  
+                break;  
+            }  
+      
+        }  
+      
+    }  
+
+ReqQueryPayOrder 有两个属性，分别为appSerialNo和appPayKey。目的就是把带有这两个属性的对象传递给webservice
+
+然后就是按照网上说的方法进行请求webservice了，很简单，不多说了。就是将repo对象add进去，这里我提供两种方法，第一种简单一些，第二种可以设置一些参数。
+
+[java] view plaincopy
+
+    SoapObject so = new SoapObject(NAMESPACE, METHOD_NAME);  
+    ReqQueryPayOrder rqpo = new ReqQueryPayOrder();  
+    rqpo.setAppSerialNo(appSerialNo);  
+    rqpo.setAppPayKey(appPayKey);  
+
+[java] view plaincopy
+
+    so.addProperty("reqQueryPayOrder", rqpo);  //第一种  
+    <pre name="code" class="java">PropertyInfo pi = new PropertyInfo();  //第二种  
+            pi.setName("reqQueryPayOrder"); // 传入的对象名..  
+            pi.setValue(rqpo);  
+            pi.setType(rqpo.getClass());  
+            so.addProperty(pi);</pre>  
+    <pre></pre>  
+    <p></p>  
+    <p>但是后来发现，我所请求的webservice对象，服务器识别不了，一直都是空对象。</p>  
+    <p>从服务器方面打印出我请求的xml如下（我把网址过滤了）</p>  
+    <p></p>  
+    <div><pre name="code" class="html"><v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><queryPayOrder xmlns="http://******/*****" id="o0" c:root="1"><reqQueryPayOrder i:type="d:anyType"><appSerialNo i:type="d:string">12345</appSerialNo><appPayKey i:type="d:string">999</appPayKey></reqQueryPayOrder></queryPayOrder><:Body><:Envelope></pre></div>  
+    <p></p>  
+    <p>我一直以为是reqQueryPayOrder i:type="d:anyType" 这句话导致服务器无法识别我的对象类型，但是改来改去，它永远都是anytpye，而且我不知道怎么把这句话去掉。至今，我都不知道怎么改动它。<span style="background-color:rgb(240,240,240)"></span></p>  
+    <p><span style="background-color:rgb(240,240,240)"><br>  
+    </span></p>  
+    <div>后来，想到可能是服务器的原因，就查了一下服务器，原来，我们公司服务器用的是cxf框架，看到一个网页有关于android请求cxf的格式（http://mail-archives.apache.org/mod_mbox/cxf-users/201010.mbox/%3CAANLkTimnXgG1-WHhoJR1=Y97JmUKPW+vvq=+U9wxGyW4@mail.gmail.com%3E），就跟我的比较了一下，发现有这么一点问题，他的方法标签里面比我的多了一点东西</div>  
+    <div><br>  
+    <div></div>  
+    <div> <n0:getWatchableList xmlns:n0="http://watchable.portal.osgi.cnam.org/" c:root="1" id="o0"></div>  
+    <div><queryPayOrder xmlns="http://******/*****" id="o0" c:root="1"></div>  
+    <div>比我多了个n0,各个子标签里面也会有n0，</div>  
+    <div>感觉应该是n0的问题又查了好久如何添加n0，</div>  
+    <div>终于知道错误所在之前代码是这样的</div>  
+    </div>  
+    <div><pre name="code" class="java">     HttpTransportSE ht = new HttpTransportSE(URL);  
+            ht.debug = true;  
+            SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(  
+                    SoapEnvelope.VER10);  
+            envelope.bodyOut = so;  
+            envelope.dotNet = true;  
+            envelope.setOutputSoapObject(so);</pre>  
+    <div><br>  
+    </div>  
+    改正的话，需要将<pre name="code" class="java">envelope.bodyOut = so;</pre>这句注释，将</div>  
+    <div><pre name="code" class="java">envelope.dotNet = true;</pre>改为</div>  
+    <div><pre name="code" class="java">envelope.dotNet = false;</pre>  
+    <div><br>  
+    </div>  
+    这样，请求的xml就成了这样了</div>  
+    <div><pre name="code" class="html"><v:Envelope xmlns:i="http://www.w3.org/1999/XMLSchema-instance" xmlns:d="http://www.w3.org/1999/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><n0:queryPayOrder id="o0" c:root="1" xmlns:n0="http://*******/****"><reqQueryPayOrder i:type="d:anyType"><appSerialNo i:type="d:string">12345</appSerialNo><appPayKey i:type="d:string">999</appPayKey></reqQueryPayOrder></n0:queryPayOrder><:Body><:Envelope></pre><br>  
+    服务器终于能正确解析我的对象了。。。<br>  
+    <br>  
+    </div>  
+    <pre></pre>  
+    <pre></pre>  

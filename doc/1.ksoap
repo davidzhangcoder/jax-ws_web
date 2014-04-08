@@ -1,0 +1,299 @@
+
+
+在Android客户端中调用WebService服务端接口.
+
+ Ksoap是一个封装调用WebService服务的包．该包传递数据的方式为xml．所以在接口中使用基本数据类型传递都没有什么问题，
+
+但是在些情况下想要传递复杂数据对象(自定义对象)就遇到了好多问题．这些问题我都倒腾了两个礼拜才弄明白．
+标签：	Android KSoap2 Android kSOAP2 wsdl2ksoap
+代码片段(1) [全屏查看所有代码]
+1. [代码]Android Ksoap2 调用WebService    
+001	Service:
+002	============================start========================================
+003	服务器架构Spring+xFire
+004	--------------------------------applicationContext-wmsmd.xml--------------------------------
+005	  <!-- MD主接口开始 -->
+006	    <bean name="VWMSMDWebService" class="org.codehaus.xfire.spring.ServiceBean">
+007	    <property name="serviceBean" ref="VWMSMDWebServiceBean"></property>
+008	    <property name="serviceClass" value="com.sinoservices.wms.md.MasterDataService"></property>
+009	    </bean>
+010	     
+011	    <bean id="VWMSMDWebServiceBean" class="com.sinoservices.wms.md.MasterDataServiceImpl"></bean>
+012	    <!-- MD主接口结束 -->
+013	---------------------------------model--------------------------------------------------------------
+014	WMSMD_User_Request{
+015	       private String userName;
+016	       private String passwd;
+017	}
+018	WMSMD_Message_Response{
+019	// 返回 操作信息
+020	private String message;
+021	//是否 成功 （状态 ）
+022	private Boolean success;
+023	//返回操作对象
+024	private Object result;
+025	 
+026	}
+027	----------------------------Interface----------------------------------------------------------------
+028	@WebService
+029	@SOAPBinding(style=Style.DOCUMENT)
+030	public interface MasterDataService  {
+031	@WebMethod
+032	public  @WebResult(name="user_response") WMSMD_Message_Response LoginUserInfo(@WebParam(name="request") WMSMD_User_Request request);
+033	@WebMethod
+034	public  @WebResult(name="sku_response") String queryStringInfo(@WebParam(name="sku") String sku);
+035	}
+036	--------------------------------implements------------------------------------------------------------
+037	@WebService(endpointInterface = "com.sinoservices.wms.md.MasterDataService")
+038	public class MasterDataService implements MasterDataService {
+039	 
+040	}
+041	--------------------------------wsdl-------------------------------------------------------------------------
+042	在服务端生成服务会有一个wsdl文件
+043	要注意里面的这个部分
+044	<wsdl:types>
+045	<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://model.md.wms.sinoservices.com">
+046	<xsd:complexType name="WMSMD_User_Request">
+047	<xsd:sequence>
+048	<xsd:element minOccurs="0" name="passwd" nillable="true" type="xsd:string"/>
+049	<xsd:element minOccurs="0" name="userName" nillable="true" type="xsd:string"/>
+050	</xsd:sequence>
+051	</xsd:complexType>
+052	<xsd:complexType name="WMSMD_Message_Response">
+053	<xsd:sequence>
+054	<xsd:element minOccurs="0" name="message" nillable="true" type="xsd:string"/>
+055	<xsd:element minOccurs="0" name="result" nillable="true" type="xsd:anyType"/>
+056	<xsd:element minOccurs="0" name="success" nillable="true" type="xsd:boolean"/>
+057	</xsd:sequence>
+058	</xsd:complexType>
+059	</xsd:schema>
+060	</wsdl:types>
+061	在建立客户端Model的时候要安照这里的顺序来写．
+062	============================the end======================================
+063	Test Client
+064	============================start========================================
+065	//定义常量
+066	private static final String stringMethodName = "queryStringInfo";
+067	private static final String stringMethodName2 = "LoginUserInfo";
+068	private static final String stringNamespace = "http://md.wms.sinoservices.com";
+069	private static final String stringURL = "http://10.100.0.88/WMS/services/MasterDataService";
+070	 
+071	public void Ksoap2ObjectClent() {
+072	 
+073	SoapObject soapObject = new SoapObject(Ksoap2JavaTest.stringNamespace,
+074	Ksoap2JavaTest.stringMethodName2);
+075	//set property
+076	WMSMD_User_Request model =  new WMSMD_User_Request();
+077	model.setUserName("kitty");
+078	model.setPasswd("123456");
+079	 
+080	PropertyInfo propertyInfo = new PropertyInfo();
+081	propertyInfo.setName("in0");
+082	propertyInfo.setValue(model);
+083	propertyInfo.setType(WMSMD_User_Request.class);
+084	soapObject.addProperty(propertyInfo);
+085	//end
+086	/**
+087	* 生成调用WebService方法的SOAP请求信息。
+088	* 创建SoapSerializationEnvelope对象时需要通过SoapSerializationEnvelope类的构造方法设置SOAP协议的版本号。
+089	* 该版本号需要根据服务端WebService的版本号设置。
+090	* 在创建SoapSerializationEnvelope对象后，不要忘了设置SOAPSoapSerializationEnvelope类的bodyOut属性，
+091	* 该属性的值就是在第一步创建的SoapObject对象。
+092	*/
+093	SoapSerializationEnvelope soapSerializationEnvelope = new SoapSerializationEnvelope(
+094	SoapEnvelope.VER11);
+095	soapSerializationEnvelope.dotNet = true;
+096	soapSerializationEnvelope.encodingStyle = "UTF-8";
+097	//set bodyOut
+098	soapSerializationEnvelope.setOutputSoapObject(soapObject);
+099	//add Mapping
+100	soapSerializationEnvelope.addMapping(Ksoap2JavaTest.stringNamespace,WMSMD_User_Request.WMSMD_USER_CLASS.getSimpleName(),WMSMD_User_Request.class);
+101	/**
+102	*　关键地方在这里：是否传递复杂数据对象．
+103	*　如果要使用复杂对象传递数据在这里去register．
+104	*         前面数据封装见 /*set property  部分*/
+105	*    如果是基本数据类型
+106	*　　　soapObject.addProperty("in0", "测试WebService接口.");
+107	*/
+108	new WMSMD_USER_MARSHAL().register(soapSerializationEnvelope);
+109	try {
+110	/**
+111	* 创建HttpTransportsSE对象。
+112	*  AndroidHttpTransport ht = new AndroidHttpTransport(URL);
+113	*  default timeout:20000
+114	*  HttpTransportSE(String url, int timeout){}
+115	*/
+116	HttpTransportSE httpTransportSE = new HttpTransportSE(
+117	Ksoap2JavaTest.stringURL);
+118	httpTransportSE.debug = true;
+119	/**
+120	* 使用call方法调用WebService方法
+121	* <pre>
+122	* 这里的第一个参数根据<wsdlsoap:operation soapAction=""/>
+123	* 中soapAction来决定是否为空。
+124	* </pre>
+125	* 第2个参数就是在第3步创建的SoapSerializationEnvelope对象。
+126	* <pre>
+127	* <p>这里要访问网络还需要权限：AndroidManifest.xml </p>
+128	* <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+129	* </pre>
+130	*/
+131	httpTransportSE.call(null, soapSerializationEnvelope);
+132	/**
+133	* 获得WebService方法的返回结果
+134	*
+135	* 有两种方法：
+136	*
+137	* 1、使用getResponse方法获得返回数据。
+138	* envelope.getResponse();
+139	* 2、使用 bodyIn 及 getProperty。
+140	* SoapObject result = (SoapObject)envelope.bodyIn;
+141	* result.getProperty("XXX");
+142	* /
+143	SoapObject objectResult = (SoapObject) soapSerializationEnvelope.getResponse();
+144	WMSMD_Message_Response response = new WMSMD_Message_Response();
+145	for(int i=0;i<objectResult.getPropertyCount();i++){
+146	response.setProperty(i, objectResult.getProperty(i));
+147	}
+148	System.out.println(JSON.toJSONString(response));
+149	soapSerializationEnvelope.getInfo(WMSMD_Message_Response.class, null);
+150	//WMSMD_Message_Response [] res = (WMSMD_Message_Response [])soapSerializationEnvelope.getInfo(WMSMD_Message_Response.class, null);
+151	} catch (Exception exception) {
+152	exception.printStackTrace();
+153	}
+154	}
+155	-----------------------------------------------client model-------------------------------------------------------------------------------
+156	===========WMSMD_Message_CLASS　KvmSerializable=============
+157	public class WMSMD_Message_Response implements KvmSerializable {
+158	private static final int INDEX_MESSAGE = 0;
+159	private static final int INDEX_RESULT = 1;
+160	private static final int INDEX_SUCCESS = 2;
+161	public static Class WMSMD_Message_CLASS = WMSMD_Message_Response.class;
+162	// 返回 操作信息
+163	private String message;
+164	//是否 成功 （状态 ）
+165	private Boolean success;
+166	//返回操作对象
+167	private Object result;
+168	//getter and setter
+169	 ......
+170	/**重写KvmSerializable的方法**/
+171	@Override
+172	public Object getProperty(int index) {
+173	// TODO Auto-generated method stub
+174	Object obj = null;
+175	switch (index) {
+176	case INDEX_MESSAGE:
+177	obj = getMessage();
+178	break;
+179	case INDEX_SUCCESS:
+180	obj = getSuccess();
+181	break;
+182	case INDEX_RESULT:
+183	obj = getResult();
+184	break;
+185	default:
+186	break;
+187	}
+188	return obj;
+189	}
+190	 
+191	@Override
+192	public int getPropertyCount() {
+193	// TODO Auto-generated method stub
+194	return 3;
+195	}
+196	 
+197	@Override
+198	public void getPropertyInfo(int index, Hashtable arg1, PropertyInfo prop) {
+199	// TODO Auto-generated method stub
+200	switch (index) {
+201	case INDEX_MESSAGE:
+202	//第一种写法
+203	prop.name = "message";
+204	prop.type = PropertyInfo.STRING_CLASS;
+205	prop.setValue(this.message);
+206	break;
+207	case INDEX_SUCCESS:
+208	//第二种写法
+209	prop.setName("success");
+210	prop.setType(PropertyInfo.BOOLEAN_CLASS);
+211	prop.setValue(this.success);
+212	break;
+213	case INDEX_RESULT:
+214	prop.setName("result");
+215	prop.setType(PropertyInfo.OBJECT_CLASS);
+216	prop.setValue(this.result);
+217	break;
+218	default:
+219	break;
+220	}
+221	}
+222	 
+223	@Override
+224	public void setProperty(int index, Object objVal) {
+225	// TODO Auto-generated method stub
+226	switch (index) {
+227	case INDEX_MESSAGE:
+228	setMessage(objVal.toString());
+229	break;
+230	case INDEX_SUCCESS:
+231	setSuccess(Boolean.parseBoolean(objVal.toString()));
+232	break;
+233	case INDEX_RESULT:
+234	SoapObject objectResult = (SoapObject)objVal;
+235	WMSMD_User_Request response = new WMSMD_User_Request();
+236	for(int i=0;i<objectResult.getPropertyCount();i++){
+237	response.setProperty(i, objectResult.getProperty(i));
+238	}
+239	setResult(response);
+240	break;
+241	default:
+242	break;
+243	}
+244	}
+245	=========Marshal============
+246	public class WMSMD_USER_MARSHAL implements Marshal {
+247	 
+248	private static String DATACONTRACT = "http://model.md.wms.sinoservices.com";
+249	private static String CLASSNAME = "WMSMD_User_Request";
+250	@Override
+251	public Object readInstance(XmlPullParser parser, String arg1, String arg2,
+252	PropertyInfo arg3) throws IOException, XmlPullParserException {
+253	// TODO Auto-generated method stub
+254	return WMSMD_User_Request.fromString(parser.nextText());
+255	}
+256	 
+257	@Override
+258	public void register(SoapSerializationEnvelope envelope) {
+259	// TODO Auto-generated method stub
+260	envelope.addMapping(DATACONTRACT, CLASSNAME, WMSMD_User_Request.class, this);
+261	}
+262	 
+263	@Override
+264	public void writeInstance(XmlSerializer writer, Object obj)
+265	throws IOException {
+266	WMSMD_User_Request user = (WMSMD_User_Request)obj;
+267	writer.startTag(DATACONTRACT, "passwd");
+268	writer.text(user.getPasswd());
+269	writer.endTag(DATACONTRACT, "passwd");
+270	writer.startTag(DATACONTRACT, "userName");
+271	writer.text(user.getUserName());
+272	writer.endTag(DATACONTRACT, "userName");
+273	}
+274	 
+275	}
+276	===================WMSMD_User_Request KvmSerializable===================
+277	//这里实现方法类比于WMSMD_Message_CLASS
+278	public class WMSMD_User_Request implements KvmSerializable {
+279	private static final int INDEX_USERNAME = 0;
+280	private static final int INDEX_PASSWORD = 1;
+281	public static Class WMSMD_USER_CLASS = WMSMD_User_Request.class;
+282	 
+283	private String passwd;
+284	private String userName;
+285	.........
+286	 
+287	}
+288	============================the end======================================
+289	到这里关于在Android　中使用Ksoap2调用WebService的代码测试例子全部写完了．
