@@ -1,5 +1,8 @@
 package com.jaxws_web;
 
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebResult;
 import javax.jws.WebService;
 
 /**  
@@ -24,4 +27,15 @@ public interface TestWebService
 	public String webServiceMethod1();
 	
 	public User updateUser(User user);
+	
+	@WebMethod
+	public  @WebResult(name="user_response") WMSMD_Message_Response LoginUserInfo( @WebParam(name="request") WMSMD_User_Request request );
+	
+	@WebMethod
+	public  @WebResult(name="sku_response") String queryStringInfo(@WebParam(name="sku") String sku);
+
+	
 }
+
+
+

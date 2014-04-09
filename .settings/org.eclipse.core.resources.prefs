@@ -1,3 +1,8 @@
-#Mon Apr 07 14:23:20 EDT 2014
+#Tue Apr 08 17:04:01 EDT 2014
 eclipse.preferences.version=1
+encoding//doc/1.ksoap=UTF-8
+encoding//doc/2.android\u901A\u8FC7ksoap\u8BBF\u95EEwebservice\u65B9\u6CD5\u4F20\u9012\u4E00\u4E2A\u590D\u6742\u5BF9\u8C61\u53C2\u6570=UTF-8
+encoding//doc/3.Android\u5E73\u53F0\u4E0B\u4F7F\u7528Ksoap2\u8C03\u7528\u4F20\u9012\u590D\u6742\u5BF9\u8C61=UTF-8
+encoding//doc/4.android\u4F7F\u7528webservice\u4F20\u9012\u5BF9\u8C61=UTF-8
+encoding//doc/5.ksoap2\ KvmSerializable\ \u6CE8\u610F\u4E8B\u9879=UTF-8
 encoding//src/com/jaxws_client/TestWebServiceClient.java=UTF-8

@@ -66,4 +66,20 @@ public class TestWebServiceImpl implements TestWebService
 		return user;
 	}
 
+
+	@Override
+	public WMSMD_Message_Response LoginUserInfo(WMSMD_User_Request request)
+	{
+		WMSMD_Message_Response wMSMD_Message_Response = new WMSMD_Message_Response();
+		wMSMD_Message_Response.setResult("aaaaa");
+		return wMSMD_Message_Response;
+	}
+
+
+	@Override
+	public String queryStringInfo(String sku) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
