@@ -1,0 +1,183 @@
+
+
+1.webservice方法要传递参数的对象中包含了日期类型，guid类型。如下所示：
+
+[html] view plaincopy
+
+    POST /MyWebService.asmx HTTP/1.1  
+    Host: 192.168.11.62  
+    Content-Type: text/xml; charset=utf-8  
+    Content-Length: length  
+    SOAPAction: "http://tempuri.org/AddMaintenanceInfo"  
+      
+    <?xml version="1.0" encoding="utf-8"?>  
+    <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">  
+      <soap:Body>  
+        <AddMaintenanceInfo xmlns="http://tempuri.org/">  
+          <model>  
+            <Id>guid</Id>  
+            <CarId>guid</CarId>  
+            <Cost>string</Cost>  
+            <Dates>dateTime</Dates>  
+          </model>  
+        </AddMaintenanceInfo>  
+      </soap:Body>  
+    </soap:Envelope>  
+
+
+
+
+2.新建一个类CarMaintenanceInfo用于传递参数对象，并使其实现KvmSerializable，如下
+
+[java] view plaincopy
+
+    public class CarMaintenanceInfo implements KvmSerializable {  
+      
+      
+        /** 
+         * 车辆ID 
+         */  
+        public String CarId;  
+      
+        /** 
+         * 车辆维修费用 
+         */  
+        public String Cost;  
+      
+        public String Dates;  
+      
+        @Override  
+        public Object getProperty(int arg0) {  
+            switch (arg0) {  
+                case 0:  
+                    return CarId;  
+                case 1:  
+                    return Cost;  
+                case 2:  
+                    return Dates;  
+                default:  
+                    break;  
+            }  
+            return null;  
+        }  
+      
+        @Override  
+        public int getPropertyCount() {  
+            return 3;  
+        }  
+      
+        @Override  
+        public void getPropertyInfo(int arg0, Hashtable arg1, PropertyInfo arg2) {  
+            switch (arg0) {  
+                case 0:  
+                    arg2.type = PropertyInfo.STRING_CLASS;  
+                    arg2.name = "CarId";  
+                    break;  
+                case 1:  
+                    arg2.type = PropertyInfo.STRING_CLASS;  
+                    arg2.name = "Cost";  
+                    break;  
+                case 2:  
+                    arg2.type = PropertyInfo.STRING_CLASS;  
+                    arg2.name = "Dates";  
+                    break;  
+                default:  
+                    break;  
+            }  
+        }  
+      
+        @Override  
+        public void setProperty(int arg0, Object arg1) {  
+            switch (arg0) {  
+                case 0:  
+                    CarId = arg1.toString();  
+                    break;  
+                case 1:  
+                    Cost = arg1.toString();  
+                    break;  
+                case 2:  
+                    Dates =  arg1.toString();  
+                    break;  
+                default:  
+                    break;  
+            }  
+      
+        }  
+      
+    }  
+
+
+注意：getPropertyCount的值一定要与该类对象的属性数相同，否则在传递到服务器时，服务器收不到部分对象的属性。
+
+3.编写请求方法，如下：
+
+[java] view plaincopy
+
+    public boolean addMaintenanceInfo(Context context) throws IOException, XmlPullParserException {  
+      
+            String nameSpace = "http://tempuri.org/";  
+            String methodName = "AddMaintenanceInfo";  
+            String soapAction = "http://tempuri.org/AddMaintenanceInfo";  
+      
+            String url = "http://192.168.11.62:6900/MyWebService.asmx?wsdl";// 后面加不加那个?wsdl参数影响都不大  
+      
+              
+            CarMaintenanceInfo info = new CarMaintenanceInfo();  
+            info.setProperty(0, "9fee02c9-8785-4b49-b389-58ed6562c66d");  
+            info.setProperty(1, "12778787");  
+            info.setProperty(2, "2013-07-29T16:45:20");  
+              
+              
+            // 建立webservice连接对象  
+            org.ksoap2.transport.HttpTransportSE transport = new HttpTransportSE(url);  
+            transport.debug = true;// 是否是调试模式  
+      
+            // 设置连接参数  
+            SoapObject soapObject = new SoapObject(nameSpace, methodName);  
+            PropertyInfo objekt = new PropertyInfo();  
+            objekt.setName("model");  
+            objekt.setValue(info);  
+            objekt.setType(info.getClass());  
+            soapObject.addProperty(objekt);  
+      
+            // 设置返回参数  
+            SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(SoapEnvelope.VER11);// soap协议版本必须用SoapEnvelope.VER11（Soap  
+                                                                                                    // V1.1）  
+            envelope.dotNet = true;// 注意：这个属性是对dotnetwebservice协议的支持,如果dotnet的webservice  
+                                    // 不指定rpc方式则用true否则要用false  
+            envelope.bodyOut = transport;  
+            envelope.setOutputSoapObject(soapObject);// 设置请求参数  
+    //      new MarshalDate().register(envelope);    
+            envelope.addMapping(nameSpace, "CarMaintenanceInfo", info.getClass());// 传对象时必须，参数namespace是webservice中指定的，  
+              
+            // claszz是自定义类的类型  
+            try {  
+                transport.call(soapAction, envelope);  
+                // SoapObject sb = (SoapObject)envelope.bodyIn;//服务器返回的对象存在envelope的bodyIn中  
+                Object obj = envelope.getResponse();// 直接将返回值强制转换为已知对象  
+                Log.d("WebService", "返回结果：" + obj.toString());  
+      
+            }  
+            catch (IOException e) {  
+                e.printStackTrace();  
+            }  
+            catch (XmlPullParserException e) {  
+                e.printStackTrace();  
+            }  
+            catch (Exception ex) {  
+                ex.printStackTrace();  
+            }  
+      
+            return true;  
+      
+            // 解析返回的结果  
+            // return Boolean.parseBoolean(new AnalyzeUtil().analyze(response));  
+        }  
+
+
+注意：传递date类型的时候其实可以使用Date而不是String。但是需要修改几个地方
+1.CarMaintenanceInfo类中的getPropertyInfo(),将arg2.type = PropertyInfo.STRING_CLASS修改为MarshalDate.DATE_CLASS;
+2. 在请求方法中的 envelope.setOutputSoapObject(soapObject);下加上 new MarshalDate().register(envelope);  
+虽然可以使用Date，但是传到服务器上的时间与本地时间有时差问题。
+
+
